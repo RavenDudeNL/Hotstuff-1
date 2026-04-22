@@ -1,0 +1,72 @@
+name: Viral Clipper
+
+on:
+  schedule:
+    - cron: '0 9 * * 1'  # Runs every Monday at 9 AM UTC
+  workflow_dispatch:  # Allow manual trigger
+
+jobs:
+  clip_viral_videos:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+        
+      - name: Setup Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          pip install yt-dlp anthropic requests python-dotenv moviepy
+
+      - name: Install FFmpeg
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y ffmpeg
+
+      - name: Search YouTube for trending videos
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          python scripts/find_trending_videos.py
+
+      - name: Download and process video
+        run: |
+          python scripts/download_video.py
+
+      - name: Analyze with Claude API
+        env:
+          CLAUDE_API_KEY: ${{ secrets.CLAUDE_API_KEY }}
+        run: |
+          python scripts/analyze_with_claude.py
+
+      - name: Detect scenes with Grok API
+        env:
+          GROK_API_KEY: ${{ secrets.GROK_API_KEY }}
+        run: |
+          python scripts/detect_scenes.py
+
+      - name: Create video clips
+        run: |
+          python scripts/create_clips.py
+
+      - name: Upload to TikTok
+        env:
+          TIKTOK_ACCESS_TOKEN: ${{ secrets.TIKTOK_ACCESS_TOKEN }}
+        run: |
+          python scripts/upload_tiktok.py
+
+      - name: Upload to Instagram
+        env:
+          INSTAGRAM_ACCESS_TOKEN: ${{ secrets.INSTAGRAM_ACCESS_TOKEN }}
+        run: |
+          python scripts/upload_instagram.py
+
+      - name: Upload to YouTube
+        env:
+          YOUTUBE_API_KEY: ${{ secrets.YOUTUBE_API_KEY }}
+        run: |
+          python scripts/upload_youtube.py
